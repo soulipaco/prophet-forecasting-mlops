@@ -31,6 +31,9 @@ BLUE_LIGHT = "#DBEAFE"
 ORANGE = "#F97316"
 TEAL = "#14B8A6"
 
+plt.rcParams["svg.hashsalt"] = "forecasting-portfolio"
+SVG_METADATA = {"Date": None, "Creator": "forecasting-mlops"}
+
 
 def synthetic_source() -> pd.DataFrame:
     """Mirror the safe Databricks demonstration at pandas grain."""
@@ -87,10 +90,23 @@ def _round_rect(ax, x, y, width, height, fill, edge="none", radius=24, linewidth
     return patch
 
 
+def _clean_svg(path: Path) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    path.write_bytes(("\n".join(line.rstrip() for line in lines) + "\n").encode("utf-8"))
+
+
 def _save(fig, stem: str, width: int, height: int) -> None:
     svg = OUTPUT / f"{stem}.svg"
     png = OUTPUT / f"{stem}.png"
-    fig.savefig(svg, format="svg", facecolor=fig.get_facecolor(), bbox_inches=None, pad_inches=0)
+    fig.savefig(
+        svg,
+        format="svg",
+        facecolor=fig.get_facecolor(),
+        bbox_inches=None,
+        pad_inches=0,
+        metadata=SVG_METADATA,
+    )
+    _clean_svg(svg)
     fig.savefig(png, format="png", facecolor=fig.get_facecolor(), bbox_inches=None, pad_inches=0, dpi=100)
     plt.close(fig)
     with Image.open(png) as image:
@@ -290,14 +306,15 @@ def forecast_chart(source: pd.DataFrame, forecasts: pd.DataFrame) -> dict[str, o
     fig.subplots_adjust(left=0.08, right=0.96, top=0.82, bottom=0.13)
     svg = OUTPUT / "synthetic_forecast.svg"
     png = OUTPUT / "synthetic_forecast.png"
-    fig.savefig(svg, format="svg", facecolor=PAPER)
+    fig.savefig(svg, format="svg", facecolor=PAPER, metadata=SVG_METADATA)
+    _clean_svg(svg)
     fig.savefig(png, format="png", facecolor=PAPER, dpi=100)
     plt.close(fig)
     with Image.open(png) as image:
         clean = image.convert("RGB")
         clean.save(png, optimize=True)
     export = selected[["ds", "yhat", "yhat_lower", "yhat_upper", "row_type", "horizon_day"]].copy()
-    export.to_csv(OUTPUT / "synthetic_forecast.csv", index=False)
+    export.to_csv(OUTPUT / "synthetic_forecast.csv", index=False, lineterminator="\n")
     return {
         "selected_forecast_rows": len(selected),
         "selected_future_rows": len(future),
