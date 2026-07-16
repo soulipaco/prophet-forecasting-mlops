@@ -2,9 +2,6 @@
 /*.ipynb
 /*.xlsx
 
-# Public reference checkout used only for discovery.
-/reference_marvel-characters/
-
 # Local environments, caches, build output, and generated run artifacts.
 /.venv/
 /.pytest_cache/
