@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Batch Prophet forecasting pipeline for Databricks"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-  "holidays==0.76",
+  "holidays==0.100",
   "mlflow==3.1.1",
   "numpy==1.26.4",
   "optuna==4.4.0",
