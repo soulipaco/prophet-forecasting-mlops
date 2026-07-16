@@ -1,133 +1,187 @@
+![Prophet Forecasting MLOps](assets/portfolio/hero.svg)
+
 <div align="center">
 
-# Prophet Forecasting MLOps
-
-### Production-grade batch time-series forecasting on Databricks
-
 [![CI](https://github.com/soulipaco/prophet-forecasting-mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/soulipaco/prophet-forecasting-mlops/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
-![Databricks](https://img.shields.io/badge/Databricks-Asset%20Bundles-FF3621?logo=databricks&logoColor=white)
-![Prophet](https://img.shields.io/badge/Forecasting-Prophet-6F42C1)
-![MLflow](https://img.shields.io/badge/Tracking-MLflow-0194E2?logo=mlflow&logoColor=white)
-
-Evidence-led architecture · Reproducible forecasting · MLflow lineage · Serverless Databricks
+![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Databricks Asset Bundles](https://img.shields.io/badge/Databricks-Asset_Bundle-FF3621?logo=databricks&logoColor=white)
 
 </div>
 
----
+# Prophet Forecasting MLOps
 
-## The project
+A production-oriented batch forecasting reference for coordinating Prophet model collections on
+Databricks. The project keeps forecasting behavior in testable Python while Spark/Delta IO, MLflow
+tracking, and job delivery remain at a narrow platform boundary.
 
-This repository implements a maintainable forecasting platform for coordinated Prophet model collections. Forecasting behavior lives in ordinary testable Python, while Spark/Delta IO, MLflow tracking, and deployment stay behind clear Databricks boundaries.
+## The one-minute view
 
-The system trains one model per series and target, evaluates time-aware cross-validation, generates three-calendar-month forecasts, and publishes stable versioned outputs through a serverless Databricks job.
+The pipeline discovers the series present in its input and fits both configured targets for each
+series. Every fit follows the same validated path: daily preparation, calendar and regressor
+construction, adaptive time-aware cross-validation, Optuna parameter search, final Prophet fit, and
+a three-calendar-month forecast with an 80% prediction interval.
 
-## Verified outcome
+One collection run writes stable Delta contracts for forecasts, backtests, parameters, statuses,
+and run metadata. A deterministic synthetic source makes the entire demonstration reproducible
+without an external dataset.
 
-| Check | Result |
+| Reproducible repository evidence | Result |
 |---|---:|
-| Automated tests | **10 passing** |
-| Databricks environments | **dev, acc, prd deployed** |
-| End-to-end dev smoke run | **successful** |
-| Synthetic model fits | **4 completed, 0 failed** |
-| Persisted smoke outputs | **832 forecast rows, 84 backtest rows** |
+| Synthetic source | 2 series, 2 targets |
+| Completed synthetic fits | 4 |
+| Failed synthetic fits | 0 |
+| Forecast rows | 832 |
+| Backtest rows | 84 |
+| Local non-Databricks tests | 10 passing |
 
-The cloud smoke test uses deterministic synthetic time series so the project can be evaluated without external data dependencies.
+These figures were regenerated from the package on 2026-07-16. They demonstrate execution and
+contracts, not production accuracy or business impact. See the
+[claims traceability table](docs/claims_traceability.md) and
+[visual manifest](assets/portfolio/visual_manifest.json).
 
-## Architecture
+## Implemented architecture
 
-```mermaid
-flowchart LR
-    A["Versioned Delta input"] --> B["Data contract"]
-    B --> C["Daily expansion & calendar rules"]
-    C --> D["Series × target orchestration"]
-    D --> E["Optuna + Prophet CV"]
-    E --> F["Final fit & three-month forecast"]
-    F --> G["Stable Delta output contract"]
-    E --> H["Backtest metrics"]
-    D --> I["Series status"]
-    G --> J["Run manifest"]
-    H --> J
-    I --> J
-    J --> K["MLflow collection lineage"]
-```
+![Implemented architecture](assets/portfolio/architecture.svg)
 
-Forecasting logic is independent of Spark. Databricks-specific behavior is confined to the IO boundary, MLflow integration, and deployment resources.
+The left side is regular packaged Python. It can be imported and tested without Spark. The right
+side is the Databricks adapter: versioned Delta input, managed outputs, collection-level MLflow
+lineage, and a two-task Asset Bundle job configured for dev, acc, and prd targets.
 
-## Design decisions that matter
+Read the [implemented architecture](docs/architecture.md) for responsibilities, data contracts,
+failure behavior, reproducibility, and deliberate scope.
 
-- **Batch over online serving:** the source produces forecast tables and has no request-time consumer.
-- **A coordinated model collection:** current scale implies 25 series × 2 targets, while one registered model per fit would create unnecessary operational overhead.
-- **Behavioral stability:** logistic growth, seasonality, regressors, holidays, adaptive CV, Optuna search, and three-calendar-month horizons are covered by explicit module boundaries and tests.
-- **Stable forecast schema:** internal Prophet component columns are excluded from Delta contracts; point estimates, intervals, bounds, horizon, row type, lineage, and series keys remain.
-- **Idempotent retries:** writes replace the logical records for the same `run_id` before append.
-- **Collection-level MLflow:** one bounded run captures configuration, source version, counts, metrics, and selected parameters.
-- **No premature production schedule:** production source ownership, cadence, and promotion thresholds remain explicit activation gates.
+## Batch lifecycle
 
-## Repository map
+![Batch lifecycle](assets/portfolio/lifecycle.svg)
 
-```text
-├── conf/                       # Validated base/dev/acc/prd configuration
-├── docs/                       # Discovery, decisions, migration and traceability
-├── resources/                 # Databricks job resources
-├── scripts/                   # Thin Databricks entry points
-├── src/forecasting_project/   # Reusable forecasting package
-├── tests/                      # Unit tests and safe synthetic fixtures
-├── databricks.yml             # Databricks Asset Bundle
-├── pyproject.toml             # Package and tooling configuration
-└── uv.lock                    # Reproducible dependency lock
-```
+`run_collection` enumerates every distinct series key and both configured targets. It records one
+status and one selected-parameter record per attempted fit. The configured `fail_fast` policy
+re-raises a fit failure after recording its status.
 
-## Core package responsibilities
+## Forecast evidence
+
+![Synthetic Prophet forecast](assets/portfolio/synthetic_forecast.svg)
+
+This chart is generated by `tools/generate_portfolio_assets.py` from the actual package, not from a
+hand-drawn trend. It uses a seeded weekday-only synthetic series, the dev configuration, the shared
+Prophet builder, Optuna search, and the configured three-calendar-month horizon. The source values
+and forecast contract are available in [synthetic_forecast.csv](assets/portfolio/synthetic_forecast.csv).
+
+## Design decisions
+
+- **Batch tables are the interface.** The repository has no request-time consumer, so online serving
+  would add an unsupported operational surface.
+- **The collection is the tracking unit.** One MLflow run captures configuration, source version,
+  counts, metrics, and selected parameters without creating a registered model per series/target fit.
+- **Time is respected during evaluation.** Prophet cross-validation uses adaptive initial, period,
+  and horizon windows derived from available history.
+- **Forecast outputs are intentionally narrow.** Stable point forecasts, intervals, bounds, horizon,
+  row type, series keys, and lineage are retained; internal component columns are excluded.
+- **Retries are run-idempotent.** A repeated logical `run_id` replaces its prior records before append.
+- **Environment values stay in configuration.** Catalogs and tuning budgets are selected through
+  base plus dev/acc/prd YAML overlays.
+
+## Package map
 
 | Module | Responsibility |
 |---|---|
-| `config.py` | Pydantic configuration and environment overlays |
-| `contracts.py` | Input schema, uniqueness, type and cutoff validation |
-| `preprocessing.py` | Daily expansion, closure inference and logistic bounds |
-| `calendars.py` | Country-aware holiday construction |
-| `splitting.py` | Source-equivalent CV windows and calendar horizons |
-| `prophet_model.py` | Shared Prophet builder, Optuna objective, fit and CV |
-| `evaluation.py` | Forecast accuracy and interval metrics |
-| `orchestration.py` | Deterministic series/target collection execution |
-| `tracking.py` | Config hashing, run manifests and MLflow lineage |
-| `databricks_io.py` | Spark/Delta boundary and idempotent writes |
+| [`config.py`](src/forecasting_project/config.py) | Pydantic configuration and environment overlays |
+| [`contracts.py`](src/forecasting_project/contracts.py) | Input schema, cutoff, and uniqueness validation |
+| [`preprocessing.py`](src/forecasting_project/preprocessing.py) | Daily expansion, closures, and logistic bounds |
+| [`calendars.py`](src/forecasting_project/calendars.py) | Country-aware holiday frames |
+| [`splitting.py`](src/forecasting_project/splitting.py) | Adaptive CV geometry and calendar horizons |
+| [`prophet_model.py`](src/forecasting_project/prophet_model.py) | Prophet builder, Optuna search, CV, and fit |
+| [`evaluation.py`](src/forecasting_project/evaluation.py) | Error, bias, WAPE, coverage, and naive-baseline helpers |
+| [`orchestration.py`](src/forecasting_project/orchestration.py) | Series-by-target collection execution |
+| [`tracking.py`](src/forecasting_project/tracking.py) | Config hash, manifest, and MLflow logging |
+| [`databricks_io.py`](src/forecasting_project/databricks_io.py) | Spark/Delta reads and idempotent writes |
+
+## Output contracts
+
+| Delta table | Grain | Purpose |
+|---|---|---|
+| `forecast_rows` | run x series x target x date x row type | fitted and future point/bound forecasts |
+| `backtest_rows` | run x series x target x CV prediction | Prophet cross-validation output |
+| `selected_parameters` | run x series x target | chosen search parameters |
+| `series_status` | run x series x target | completed/failed fit status |
+| `run_manifest` | run | source/config/code lineage and collection counts |
+
+## Repository structure
+
+```text
+.
+|-- assets/portfolio/          # Regenerable GitHub visuals and synthetic evidence
+|-- conf/                      # Validated base/dev/acc/prd configuration
+|-- docs/                      # Architecture, audit, claims, and visual identity
+|-- resources/                 # Databricks job definition
+|-- scripts/                   # Thin Databricks entry points
+|-- src/forecasting_project/   # Reusable forecasting package
+|-- tests/                     # Unit tests and synthetic fixture specification
+|-- tools/                     # Portfolio generation and validation
+|-- databricks.yml             # Databricks Asset Bundle
+|-- pyproject.toml             # Package and tool configuration
+`-- uv.lock                    # Resolved dependency lock
+```
 
 ## Local validation
 
 Prerequisites: Python 3.12 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-uv sync --extra test
-uv run ruff check src tests scripts
-uv run ruff format --check src tests scripts
-uv run pytest
+uv sync --extra test --extra portfolio
+uv run ruff check src tests scripts tools
+uv run ruff format --check src tests scripts tools
+uv run pytest -m "not databricks"
+uv run python tools/validate_portfolio.py
 uv build
 ```
 
-## Databricks deployment
+Regenerate the synthetic forecast and repository visuals:
 
-Authenticate with OAuth or workload identity—never commit a personal access token.
+```bash
+uv run --extra portfolio python tools/generate_portfolio_assets.py
+```
+
+## Databricks validation and execution
+
+Authenticate with OAuth or workload identity. Do not store credentials in the repository.
 
 ```bash
 databricks auth login
-databricks bundle validate -t dev -p dev
-databricks bundle deploy -t dev -p dev
-databricks bundle run -t dev -p dev forecasting_pipeline
+databricks bundle validate -t dev
+databricks bundle deploy -t dev
+databricks bundle run -t dev forecasting_pipeline
 ```
 
-The provided job bootstraps deterministic synthetic data for safe demonstration. Replace that task with an approved source-table contract before a real-data run. Acc/prd resources are deployed but intentionally unscheduled.
+Repeat validation with `-t acc` or `-t prd` for the other configured targets. The checked-in job is
+an intentionally unscheduled demonstration and its first task creates deterministic synthetic
+input. A real deployment must replace that bootstrap with an approved source contract and operating
+ownership.
+
+## Scope and limits
+
+Implemented: packaged forecasting logic, validated configuration, time-aware Prophet/Optuna fitting,
+stable batch contracts, MLflow collection lineage, idempotent Delta persistence, Asset Bundle job
+resources, tests, CI, and reproducible portfolio evidence.
+
+Not implemented: online serving, a model registry, automated promotion, accuracy/drift monitoring,
+retraining triggers, a production schedule, continuous deployment, or production ingestion. The
+metric utilities include a seasonal-naive helper, but the Databricks job does not currently use it
+as an operational acceptance gate.
 
 ## Documentation
 
-- [Target architecture and decision records](docs/target_architecture.md)
+- [Architecture](docs/architecture.md)
+- [Portfolio audit](docs/portfolio_audit.md)
+- [Claims traceability](docs/claims_traceability.md)
+- [Visual identity](docs/visual_identity.md)
+- [Validation report](docs/validation_report.md)
+- [Portfolio handoff](docs/portfolio_handoff.md)
 
-## Engineering standards
+## Portfolio media
 
-The project uses locked dependencies, Ruff, pytest, reproducible synthetic fixtures, GitHub Actions, environment-specific configuration, OAuth/workload identity, and idempotent run-level persistence.
+- [LinkedIn carousel package](portfolio/linkedin/README.md)
+- [Editable carousel](portfolio/linkedin/prophet-forecasting-carousel.pptx)
+- [LinkedIn copy and alt text](portfolio/linkedin/linkedin_copy.md)
 
-## Project status
-
-The dev, acceptance, and production bundles are deployed. Production activation requires the final source contract, retraining cadence, target-specific acceptance thresholds, and ownership of promotion decisions.
-
-Contributions are welcome through focused pull requests.
+Focused pull requests are welcome.

@@ -9,8 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v6
-      - run: uv sync --extra test
-      - run: uv run ruff check src tests scripts
-      - run: uv run ruff format --check src tests scripts
+      - run: uv sync --extra test --extra portfolio
+      - run: uv run ruff check src tests scripts tools
+      - run: uv run ruff format --check src tests scripts tools
       - run: uv run pytest -m "not databricks"
+      - run: uv run python tools/validate_portfolio.py
       - run: uv build
