@@ -1,7 +1,7 @@
 from forecasting_project.splitting import calendar_month_horizon, source_cv_window
 
 
-def test_calendar_month_horizon_matches_notebook() -> None:
+def test_calendar_month_horizon_uses_calendar_boundaries() -> None:
     assert calendar_month_horizon("2025-05-01", 3) == 92
 
 

@@ -2,7 +2,7 @@
 
 ## Design objective
 
-Build the smallest production-capable batch forecasting system that preserves the current notebook mathematics, makes behavior testable, records lineage, and can run as a Databricks job. The design intentionally excludes online serving, one-registry-entry-per-series, classifier concepts, and infrastructure that has no evidence-backed consumer.
+Build the smallest production-capable batch forecasting system that keeps forecasting behavior testable, records lineage, and runs as a Databricks job. The design intentionally excludes online serving, one-registry-entry-per-series, classifier concepts, and infrastructure that has no evidence-backed consumer.
 
 ## Proposed project structure
 
@@ -49,15 +49,10 @@ The final root will be created only after `<TARGET_PROJECT_PATH>` is confirmed.
 │   ├── parity/
 │   ├── integration/
 │   └── databricks/
-├── sanitized_source/
-│   └── forecasting_pipeline_anonymized.ipynb
 └── docs/
-    ├── anonymization_report.md
-    ├── discovery_report.md
     ├── target_architecture.md
-    ├── migration_plan.md
-    ├── behavioral_baseline.md
-    └── traceability.md
+    ├── excluded_reference_features.md
+    └── known_limitations.md
 ```
 
 Names may be tightened during implementation, but module boundaries should change only if tests demonstrate a simpler equivalent.
@@ -72,7 +67,7 @@ Names may be tightened during implementation, but module boundaries should chang
 - `splitting.py`: current adaptive Prophet CV windows plus explicit rolling-origin fold materialization and horizon buckets.
 - `prophet_model.py`: one model-construction function used by both tuning and final fitting; serialization helpers are isolated here.
 - `tuning.py`: deterministic Optuna study creation, search space, failure capture, and resource limits.
-- `evaluation.py`: notebook-parity RMSE plus baseline, MAE/WAPE or sMAPE, bias, interval coverage, interval width, and horizon-bucket aggregation.
+- `evaluation.py`: RMSE plus baseline, MAE/WAPE or sMAPE, bias, interval coverage, interval width, and horizon-bucket aggregation.
 - `forecasting.py`: future-frame construction, regressor join, completeness checks, prediction, output schema, and historical/future row typing.
 - `orchestration.py`: loops over the 25 series and two targets, coordinates parent/series results, and applies the configured fail-fast or continue-and-record policy.
 - `tracking.py`: MLflow parent run, nested or artifact-based series records, dataset/code/config lineage, metrics, and optional model collection manifest.
@@ -107,9 +102,9 @@ Required logical fields are:
 - `Business_Category_003` target and KPI target.
 - Three known-future regressors.
 - The auxiliary field used by non-operating-day detection.
-- Optional normal/bound metadata currently read by the notebook but unused.
+- Optional normal/bound metadata reserved for future target constraints.
 
-The migration layer initially maps these logical names to sanitized source columns. Production table names and business names remain external configuration.
+The data-access layer maps logical names to configured source columns. Production table names and business names remain external configuration.
 
 Validation checks required columns, date coercion, one row per series/date, consistent country per series, non-null historical targets, numeric target/regressor types, sufficient positive volume for the logistic floor, future-regressor completeness for every requested forecast date, and deterministic ordering. It reports all violations with neutral series keys.
 
@@ -128,7 +123,7 @@ All tables are keyed so rerunning the same run ID is idempotent.
 ## Training, forecasting, and backtesting entry points
 
 - `validate_input.py` resolves the source snapshot and creates a validation manifest. It fails before expensive fitting when the global contract is invalid.
-- `train_and_backtest.py` materializes folds, computes baselines, tunes and fits series models, records metrics/statuses, and writes a model collection manifest. The parity profile uses the notebook's adaptive windows, 50 trials, RMSE objective, and model settings.
+- `train_and_backtest.py` materializes folds, computes baselines, tunes and fits series models, records metrics/statuses, and writes a model collection manifest. The production profile uses adaptive windows, 50 trials, an RMSE objective, and explicit model settings.
 - `generate_forecasts.py` loads the models from the same run context (or uses freshly fitted objects in a combined task), validates future regressors, and emits the 92-day/calendar-three-month forecast rows.
 - `persist_results.py` commits results atomically or by deterministic merge after verifying expected counts.
 - `monitor_forecasts.py` joins forecasts to newly arrived actuals and refreshes monitoring aggregates.
@@ -200,7 +195,7 @@ Retraining triggers remain advisory until cadence and approval authority are con
 CI on pull requests:
 
 1. `uv sync --extra test` using the lock file.
-2. Secret/private-key, YAML/TOML/JSON, Ruff lint/format, and notebook-output checks.
+2. Secret/private-key, YAML/TOML/JSON, and Ruff lint/format checks.
 3. Unit, contract, split/leakage, metric, schema, and parity tests.
 4. A lightweight Prophet integration test on deterministic synthetic data with fixed seeds and tolerances.
 5. Wheel build and Asset Bundle validation without deployment.
@@ -211,7 +206,7 @@ Databricks integration tests run in a protected environment and validate table I
 
 Use uv for local reproducibility and a wheel for Databricks. Pin Prophet, Optuna, pandas, holidays, Pydantic, MLflow, and compatible transitive dependencies after verifying the target Databricks runtime. Spark/Databricks packages may be provided by the runtime and declared only in the appropriate development/test extras.
 
-Authentication uses Databricks workload identity/service principals and GitHub environment secrets. Runtime secrets use Databricks secret scopes only when an external system is genuinely required. No token, host, username, `.env`, or original anonymization mapping is stored in the project.
+Authentication uses Databricks workload identity/service principals and GitHub environment secrets. Runtime secrets use Databricks secret scopes only when an external system is genuinely required. No token, host, username, or `.env` file is stored in the project.
 
 ## Logging and failure recovery
 
@@ -227,14 +222,14 @@ Persist code SHA, package/lock hash, config hash, input table/version, as-of dat
 
 | Decision | Evidence | Alternatives considered | Selected approach | Trade-offs | Migration impact |
 |---|---|---|---|---|---|
-| Production interface | Notebook writes six batch tables/files; no latency consumer | Online endpoint; batch tables; both | Batch Delta tables | No request-time inference; much simpler operations and lineage | Replace CSV writes with versioned managed tables. |
+| Production interface | Forecast consumers require batch tables; no latency consumer exists | Online endpoint; batch tables; both | Batch Delta tables | No request-time inference; much simpler operations and lineage | Publish versioned managed tables. |
 | Model unit | 25 series x 2 targets; individual Prophet fits | Model per series; model per KPI; one opaque global model; collection | Individual fits coordinated as one run/collection | Keeps local specialization without registry explosion | Add manifest/status tables and collection orchestration. |
 | Registration | No downstream model loading evidence | 50 registered models; one collection; artifacts only | Artifacts plus manifest; optional one collection registration | Less registry-native per-series governance; lower operational burden | Registration deferred until a consumer requires it. |
 | Evaluation | Mean RMSE only; three-month horizon; future actuals exist | Single aggregate RMSE; target-specific rolling metrics | Parity RMSE plus horizon/target metrics and baseline | More tables and policy decisions; materially safer promotion | Add folds, baseline, interval and bucket metrics without changing first fit. |
-| Failure policy | One exception stops notebook; short-history path broken | Always fail; always skip; configurable | Fail-fast parity, explicit continue-and-record production mode | Two policies require tests; preserves behavior before improvement | Introduce status types before changing operational behavior. |
-| Storage | Local Excel/CSV; Databricks target implied | Files; MLflow artifacts only; Delta tables | Delta result/status tables plus MLflow lineage/artifacts | Requires UC contracts and permissions | Source/destination names must be confirmed. |
-| Orchestration | One large function; reference uses DAB tasks | Replacement notebook; monolithic script; package plus thin tasks | Package plus thin DAB tasks | Slightly more files; far better testability | Extract cell behavior incrementally with parity tests. |
+| Failure policy | Series failures require explicit collection behavior | Always fail; always skip; configurable | Fail-fast validation, explicit continue-and-record production mode | Two policies require tests | Persist structured status and reason codes. |
+| Storage | Forecasts, backtests, and statuses need queryable history | Files; MLflow artifacts only; Delta tables | Delta result/status tables plus MLflow lineage/artifacts | Requires UC contracts and permissions | Source/destination contracts remain configurable. |
+| Orchestration | Collection execution spans preprocessing, tuning, fitting, and persistence | Monolithic script; package plus thin tasks | Package plus thin DAB tasks | Slightly more files; far better testability | Keep entry points thin and domain logic reusable. |
 | Monitoring | None; reference classifier payload monitor is mismatched | Reuse classifier monitor; feature drift only; forecast-aware | Forecast completeness and residual monitoring | Actuals arrive later, so monitoring is delayed by horizon | Add forecast/actual reconciliation task and tables. |
 | Schedule | Three-month horizon but no cadence | Weekly reference schedule; monthly; manual | Configurable, paused until confirmed | No automatic production run initially | Deployment can be validated safely before activation. |
 | Weekly terms | Built-in weekly plus custom weekly | Remove one; retain both | Retain both in parity profile | Possible collinearity/complexity remains | Evaluate as a challenger only after parity. |
-| Future regressors | Source contains post-cutoff rows; missing rows are dropped | Impute; extrapolate; fail contract; drop | Preserve drop in parity, require completeness status in production | May reject runs that notebook partially emits | Adds preflight visibility; no silent imputation. |
+| Future regressors | Known-future values are required for forecast dates | Impute; extrapolate; fail contract; drop | Require completeness status in production | May reject incomplete runs | Adds preflight visibility; no silent imputation. |

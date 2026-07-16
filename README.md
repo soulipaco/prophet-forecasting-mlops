@@ -2,7 +2,7 @@
 
 # Prophet Forecasting MLOps
 
-### From a confidential Databricks notebook to a tested, deployable batch forecasting system
+### Production-grade batch time-series forecasting on Databricks
 
 [![CI](https://github.com/soulipaco/prophet-forecasting-mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/soulipaco/prophet-forecasting-mlops/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
@@ -10,7 +10,7 @@
 ![Prophet](https://img.shields.io/badge/Forecasting-Prophet-6F42C1)
 ![MLflow](https://img.shields.io/badge/Tracking-MLflow-0194E2?logo=mlflow&logoColor=white)
 
-Evidence-led architecture · Privacy-first migration · Reproducible forecasting · Serverless Databricks
+Evidence-led architecture · Reproducible forecasting · MLflow lineage · Serverless Databricks
 
 </div>
 
@@ -18,25 +18,21 @@ Evidence-led architecture · Privacy-first migration · Reproducible forecasting
 
 ## The project
 
-This repository demonstrates how to turn a large, stateful Prophet notebook into a maintainable MLOps project without silently changing its forecasting mathematics.
+This repository implements a maintainable forecasting platform for coordinated Prophet model collections. Forecasting behavior lives in ordinary testable Python, while Spark/Delta IO, MLflow tracking, and deployment stay behind clear Databricks boundaries.
 
-The source workflow was first anonymized and behaviorally documented. A public mature MLOps repository was then assessed capability by capability—useful engineering patterns were adapted, while classification-specific serving, monitoring, and registry patterns were explicitly excluded.
-
-The result is a coordinated batch collection of individual Prophet models, packaged as ordinary Python and deployed through Databricks Asset Bundles.
+The system trains one model per series and target, evaluates time-aware cross-validation, generates three-calendar-month forecasts, and publishes stable versioned outputs through a serverless Databricks job.
 
 ## Verified outcome
 
 | Check | Result |
 |---|---:|
-| Confidentiality scan | 44 generated files, 39 private mappings, **0 residual findings** |
-| Sanitized notebook state | **0 outputs, 0 execution counts, 0 cell metadata** |
-| Automated tests | **11 passing** |
+| Automated tests | **10 passing** |
 | Databricks environments | **dev, acc, prd deployed** |
 | End-to-end dev smoke run | **successful** |
 | Synthetic model fits | **4 completed, 0 failed** |
 | Persisted smoke outputs | **832 forecast rows, 84 backtest rows** |
 
-Only synthetic data was used for the cloud smoke test. Confidential source records, the original notebook, and the source workbook are not included in this repository.
+The cloud smoke test uses deterministic synthetic time series so the project can be evaluated without external data dependencies.
 
 ## Architecture
 
@@ -62,7 +58,7 @@ Forecasting logic is independent of Spark. Databricks-specific behavior is confi
 
 - **Batch over online serving:** the source produces forecast tables and has no request-time consumer.
 - **A coordinated model collection:** current scale implies 25 series × 2 targets, while one registered model per fit would create unnecessary operational overhead.
-- **Behavior before improvement:** logistic growth, seasonality, regressors, holidays, adaptive CV, Optuna search, and three-calendar-month horizons are preserved first.
+- **Behavioral stability:** logistic growth, seasonality, regressors, holidays, adaptive CV, Optuna search, and three-calendar-month horizons are covered by explicit module boundaries and tests.
 - **Stable forecast schema:** internal Prophet component columns are excluded from Delta contracts; point estimates, intervals, bounds, horizon, row type, lineage, and series keys remain.
 - **Idempotent retries:** writes replace the logical records for the same `run_id` before append.
 - **Collection-level MLflow:** one bounded run captures configuration, source version, counts, metrics, and selected parameters.
@@ -74,7 +70,6 @@ Forecasting logic is independent of Spark. Databricks-specific behavior is confi
 ├── conf/                       # Validated base/dev/acc/prd configuration
 ├── docs/                       # Discovery, decisions, migration and traceability
 ├── resources/                 # Databricks job resources
-├── sanitized_source/          # Output-free anonymized source notebook
 ├── scripts/                   # Thin Databricks entry points
 ├── src/forecasting_project/   # Reusable forecasting package
 ├── tests/                      # Unit tests and safe synthetic fixtures
@@ -125,21 +120,16 @@ The provided job bootstraps deterministic synthetic data for safe demonstration.
 
 ## Documentation
 
-- [Discovery report and capability matrix](docs/discovery_report.md)
 - [Target architecture and decision records](docs/target_architecture.md)
-- [Behavioral baseline](docs/behavioral_baseline.md)
-- [Migration plan](docs/migration_plan.md)
-- [Notebook-to-package traceability](docs/traceability.md)
 - [Excluded reference features](docs/excluded_reference_features.md)
-- [Anonymization report](docs/anonymization_report.md)
 - [Known limitations and open decisions](docs/known_limitations.md)
 
-## Privacy and responsible use
+## Engineering standards
 
-The original notebook and workbook stay outside version control. The anonymization mapping is stored outside the repository, generated notebook outputs are removed, and the CI suite checks that the sanitized notebook contains no persisted execution state. See [SECURITY.md](SECURITY.md) before reporting a vulnerability or suspected disclosure.
+The project uses locked dependencies, Ruff, pytest, reproducible synthetic fixtures, GitHub Actions, environment-specific configuration, OAuth/workload identity, and idempotent run-level persistence. See [SECURITY.md](SECURITY.md) for credential and vulnerability reporting guidance.
 
 ## Project status
 
-The confidentiality-safe implementation and synthetic Databricks deployment are complete. Production activation requires an approved source table, retraining cadence, target-specific acceptance thresholds, and ownership of promotion decisions.
+The dev, acceptance, and production bundles are deployed. Production activation requires the final source contract, retraining cadence, target-specific acceptance thresholds, and ownership of promotion decisions.
 
 Contributions are welcome through focused pull requests. Start with [CONTRIBUTING.md](CONTRIBUTING.md).

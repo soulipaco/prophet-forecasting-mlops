@@ -16,14 +16,12 @@ Thank you for improving the forecasting project. Keep changes small, evidence-le
    uv build
    ```
 
-5. Update `docs/traceability.md` when moving or changing notebook-derived behavior.
+5. Update the architecture decision records when changing system behavior or operational contracts.
 6. Open a pull request describing the evidence, behavioral impact, validation, and migration implications.
 
-## Confidentiality rules
+## Repository hygiene
 
-Never commit source notebooks, workbooks, real client records, credentials, workspace deployment state, anonymization mappings, or raw production outputs. Use neutral synthetic fixtures. Do not paste sensitive values into issues, logs, screenshots, test names, or exception snapshots.
-
-If a confidentiality scan finds a potential residual, stop and report only the file and category—never print the matched value.
+Never commit credentials, local environment files, workspace deployment state, or raw production outputs. Use deterministic synthetic fixtures in tests and demonstrations. Keep logs, screenshots, test names, and exception snapshots free of customer data.
 
 ## Testing expectations
 

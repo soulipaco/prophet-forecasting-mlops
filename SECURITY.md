@@ -1,8 +1,8 @@
-# Security and confidentiality
+# Security
 
 ## Reporting
 
-Do not open a public issue containing credentials, client data, source records, internal identifiers, or original-to-anonymized mappings. Use GitHub's private vulnerability reporting for this repository, or contact the repository owner privately.
+Do not open a public issue containing credentials, customer data, or internal identifiers. Use GitHub's private vulnerability reporting for this repository, or contact the repository owner privately.
 
 ## Credential policy
 
@@ -12,7 +12,7 @@ Do not open a public issue containing credentials, client data, source records, 
 
 ## Data policy
 
-Only synthetic or explicitly approved anonymized data belongs in tests and demonstrations. Original notebooks, workbooks, production outputs, and the private alias mapping must remain outside version control.
+Tests and demonstrations use deterministic synthetic data. Raw production data and outputs remain outside version control.
 
 ## Supported versions
 

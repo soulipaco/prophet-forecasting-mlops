@@ -1,4 +1,4 @@
-# Confidential source inputs: never commit.
+# Local source inputs.
 /*.ipynb
 /*.xlsx
 
@@ -18,10 +18,9 @@
 /.databricks/
 /forecast_output/
 
-# Local secrets and private anonymization material.
+# Local secrets.
 .env
 .env.*
 !*example*
-*anonymization_mapping*
 *.pem
 *.key

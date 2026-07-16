@@ -4,7 +4,7 @@
 
 ## Evidence and rationale
 
-<!-- Link the notebook behavior, design decision, issue, or operational evidence. -->
+<!-- Link the design decision, issue, benchmark, or operational evidence. -->
 
 ## Behavioral impact
 
@@ -12,10 +12,10 @@
 - [ ] Any intentional behavior change has old/new tests and documentation.
 - [ ] Traceability documentation is updated where applicable.
 
-## Confidentiality
+## Repository safety
 
-- [ ] No original notebook, workbook, real record, credential, mapping, or production output is included.
-- [ ] Fixtures and logs contain only neutral synthetic values.
+- [ ] No credential, customer record, deployment state, or production output is included.
+- [ ] Fixtures and logs use deterministic synthetic values.
 
 ## Validation
 
