@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "generated_with": "tools/generate_portfolio_assets.py",
+  "seed": 314159,
+  "cutoff": "2024-05-01",
+  "data_classification": "deterministic synthetic demonstration",
+  "collection": {
+    "source_rows": 430,
+    "series": 2,
+    "targets": 2,
+    "completed_fits": 4,
+    "failed_fits": 0,
+    "forecast_rows": 832,
+    "backtest_rows": 84
+  },
+  "chart": {
+    "selected_forecast_rows": 208,
+    "selected_future_rows": 66,
+    "selected_observations": 86,
+    "forecast_max_date": "2024-07-31"
+  },
+  "forecast_csv_sha256": "9bc7476cd9f6fa7628c38bfb4511a1955af84cc3b5e29d5fd1379b0ab9a293fe",
+  "assets": {
+    "hero": {
+      "dimensions": [
+        1600,
+        560
+      ],
+      "formats": [
+        "svg",
+        "png"
+      ]
+    },
+    "architecture": {
+      "dimensions": [
+        1600,
+        900
+      ],
+      "formats": [
+        "svg",
+        "png"
+      ]
+    },
+    "lifecycle": {
+      "dimensions": [
+        1600,
+        600
+      ],
+      "formats": [
+        "svg",
+        "png"
+      ]
+    },
+    "synthetic_forecast": {
+      "dimensions": [
+        1600,
+        900
+      ],
+      "formats": [
+        "svg",
+        "png",
+        "csv"
+      ]
+    }
+  }
+}
