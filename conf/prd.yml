@@ -1,0 +1,7 @@
+environment: prd
+storage:
+  catalog: mlops_prd
+  schema_name: forecasting_project
+tuning:
+  trials: 50
+  seed: 314159

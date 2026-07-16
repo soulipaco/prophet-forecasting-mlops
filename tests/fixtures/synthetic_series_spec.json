@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "seed": 314159,
+  "frequency": "D",
+  "cutoff": "2024-05-01",
+  "forecast_months": 3,
+  "logical_columns": {
+    "date": "Date",
+    "series": [
+      "Business_Category_001",
+      "Business_Category_002",
+      "Language"
+    ],
+    "country": "Country",
+    "volume_target": "Business_Category_003",
+    "kpi_target": "Business_Category_008",
+    "regressors": [
+      "Business_Category_005",
+      "Business_Category_004",
+      "Business_Category_006"
+    ],
+    "normal_field": "Business_Category_007"
+  },
+  "cases": [
+    {
+      "id": "regular_with_non_operating_weekend",
+      "history_days": 180,
+      "future_regressor_days": 100,
+      "omit_weekdays": [5, 6],
+      "gap_every_n_days": null,
+      "volume_pattern": "weekly_trend_positive",
+      "kpi_pattern": "bounded_weekly",
+      "expected_source_behavior": "fit_both_targets"
+    },
+    {
+      "id": "calendar_gaps_with_complete_future_regressors",
+      "history_days": 120,
+      "future_regressor_days": 100,
+      "omit_weekdays": [],
+      "gap_every_n_days": 11,
+      "volume_pattern": "weekly_trend_positive",
+      "kpi_pattern": "bounded_weekly",
+      "expected_source_behavior": "expand_gaps_and_fit"
+    },
+    {
+      "id": "insufficient_history",
+      "history_days": 20,
+      "future_regressor_days": 100,
+      "omit_weekdays": [],
+      "gap_every_n_days": null,
+      "volume_pattern": "weekly_positive",
+      "kpi_pattern": "bounded_weekly",
+      "expected_source_behavior": "return_none_then_caller_failure"
+    },
+    {
+      "id": "constant_targets",
+      "history_days": 90,
+      "future_regressor_days": 100,
+      "omit_weekdays": [],
+      "gap_every_n_days": null,
+      "volume_pattern": "constant_positive",
+      "kpi_pattern": "constant",
+      "expected_source_behavior": "attempt_fit",
+      "expected_production_contract": "explicit_validation_result"
+    },
+    {
+      "id": "missing_future_primary_regressor",
+      "history_days": 120,
+      "future_regressor_days": 40,
+      "requested_future_days": 92,
+      "omit_weekdays": [],
+      "gap_every_n_days": null,
+      "volume_pattern": "weekly_trend_positive",
+      "kpi_pattern": "bounded_weekly",
+      "expected_source_behavior": "drop_incomplete_future_rows",
+      "expected_production_contract": "record_incomplete_horizon"
+    }
+  ]
+}

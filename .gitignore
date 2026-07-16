@@ -1,0 +1,26 @@
+# Local source inputs.
+/*.ipynb
+/*.xlsx
+
+# Public reference checkout used only for discovery.
+/reference_marvel-characters/
+
+# Local environments, caches, build output, and generated run artifacts.
+/.venv/
+/.pytest_cache/
+/.ruff_cache/
+/**/__pycache__/
+/dist/
+/build/
+*.egg-info/
+/htmlcov/
+/coverage.xml
+/.databricks/
+/forecast_output/
+
+# Local secrets.
+.env
+.env.*
+!*example*
+*.pem
+*.key

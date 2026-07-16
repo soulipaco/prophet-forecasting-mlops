@@ -1,0 +1,40 @@
+[project]
+name = "forecasting-mlops"
+version = "0.1.0"
+description = "Batch Prophet forecasting pipeline for Databricks"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "holidays==0.76",
+  "mlflow==3.1.1",
+  "numpy==1.26.4",
+  "optuna==4.4.0",
+  "pandas==2.3.0",
+  "prophet==1.2.2",
+  "pyarrow==17.0.0",
+  "pydantic==2.11.7",
+  "python-dateutil==2.9.0.post0",
+  "pyyaml==6.0.2",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<9", "pytest-cov>=5,<7", "ruff==0.9.5"]
+databricks = ["databricks-sdk==0.55.0", "databricks-connect>=16,<17"]
+
+[build-system]
+requires = ["setuptools>=72"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: local Prophet integration", "databricks: requires Databricks authentication"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
