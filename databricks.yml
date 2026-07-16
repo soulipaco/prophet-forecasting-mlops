@@ -1,0 +1,38 @@
+bundle:
+  name: forecasting-mlops
+
+include:
+  - resources/*.yml
+
+artifacts:
+  default:
+    type: whl
+    path: .
+    build: uv build
+
+variables:
+  as_of_date:
+    description: Forecast cutoff in YYYY-MM-DD format
+    default: "2024-05-01"
+  schedule_pause_status:
+    description: Schedule state
+    default: PAUSED
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.target}/${bundle.name}
+  acc:
+    mode: production
+    presets:
+      name_prefix: acc_
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.target}/${bundle.name}
+  prd:
+    mode: production
+    presets:
+      name_prefix: prd_
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.target}/${bundle.name}

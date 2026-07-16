@@ -1,0 +1,7 @@
+environment: dev
+storage:
+  catalog: mlops_dev
+  schema_name: forecasting_project
+tuning:
+  trials: 2
+  seed: 314159

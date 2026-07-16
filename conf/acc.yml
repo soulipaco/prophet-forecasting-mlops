@@ -1,0 +1,7 @@
+environment: acc
+storage:
+  catalog: mlops_acc
+  schema_name: forecasting_project
+tuning:
+  trials: 5
+  seed: 314159

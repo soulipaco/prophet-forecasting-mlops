@@ -1,0 +1,30 @@
+project_name: forecasting_project
+environment: dev
+series_columns: [Business_Category_001, Business_Category_002, Language]
+date_column: Date
+country_column: Country
+volume_column: Business_Category_003
+kpi_column: Business_Category_008
+regressor_columns: [Business_Category_005, Business_Category_004, Business_Category_006]
+non_operating_null_column: Business_Category_004
+normal_column: Business_Category_007
+forecast_months: 3
+non_operating_threshold: 0.9
+failure_policy: fail_fast
+tuning:
+  trials: 50
+  initial_ratio: 0.8
+  period_ratio: 0.5
+  seed: null
+tracking:
+  experiment_name: /Shared/forecasting-project
+  register_collection: false
+storage:
+  catalog: mlops_dev
+  schema_name: forecasting_project
+  source_table: forecast_input
+  forecast_table: forecast_rows
+  backtest_table: backtest_rows
+  parameter_table: selected_parameters
+  series_status_table: series_status
+  run_manifest_table: run_manifest

@@ -1,0 +1,27 @@
+# Confidential source inputs: never commit.
+/*.ipynb
+/*.xlsx
+
+# Public reference checkout used only for discovery.
+/reference_marvel-characters/
+
+# Local environments, caches, build output, and generated run artifacts.
+/.venv/
+/.pytest_cache/
+/.ruff_cache/
+/**/__pycache__/
+/dist/
+/build/
+*.egg-info/
+/htmlcov/
+/coverage.xml
+/.databricks/
+/forecast_output/
+
+# Local secrets and private anonymization material.
+.env
+.env.*
+!*example*
+*anonymization_mapping*
+*.pem
+*.key
