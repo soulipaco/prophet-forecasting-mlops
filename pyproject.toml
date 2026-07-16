@@ -18,7 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8,<9", "pytest-cov>=5,<7", "ruff==0.9.5"]
-databricks = ["databricks-sdk==0.55.0", "databricks-connect>=16,<17"]
+databricks = ["databricks-sdk==0.55.0", "databricks-connect>=16,<19"]
 
 [build-system]
 requires = ["setuptools>=72"]
