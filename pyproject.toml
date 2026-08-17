@@ -2,6 +2,7 @@
 name = "forecasting-mlops"
 version = "0.1.0"
 description = "Batch Prophet forecasting pipeline for Databricks"
+license = "MIT"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "holidays==0.76",
